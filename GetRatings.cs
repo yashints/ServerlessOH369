@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
@@ -7,6 +6,8 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Linq;
+using Microsoft.WindowsAzure.Storage.Table;
 
 namespace Company.Function
 {
@@ -17,19 +18,38 @@ namespace Company.Function
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             ILogger log)
         {
+            string userIdAPIURL = Environment.GetEnvironmentVariable("UserAPIURL");
+            string productAPIURL = Environment.GetEnvironmentVariable("ProductAPIURL");
+
+            var validator = new Helpers.RatingInputValidator();
             log.LogInformation("C# HTTP trigger function processed a request.");
+            var json = await req.ReadAsStringAsync();
+            var rating = JsonConvert.DeserializeObject<Helpers.RatingInput>(json);
+            var validationResult = validator.Validate(rating);
 
-            string name = req.Query["name"];
+            if (!validationResult.IsValid)
+            {
+                return new BadRequestObjectResult(validationResult.Errors.Select(e => new
+                {
+                    Field = e.PropertyName,
+                    Error = e.ErrorMessage
+                }));
+            }
 
-            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            dynamic data = JsonConvert.DeserializeObject(requestBody);
-            name = name ?? data?.name;
+            // Validate user
+            if (!(await Helpers.EntityExists(userIdAPIURL, rating.UserId)))
+            {
+                return new BadRequestObjectResult("User does not exist!");
+            }
 
-            string responseMessage = string.IsNullOrEmpty(name)
-                ? "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
-                : $"Hello, {name}. This HTTP triggered function executed successfully.";
+            if (!(await Helpers.EntityExists(productAPIURL, rating.ProductId)))
+            {
+                return new BadRequestObjectResult("Product does not exist!");
+            }
 
-            return new OkObjectResult(responseMessage);
+            var response = await Helpers.WriteToTable(ratingTable, rating);
+
+            return new OkObjectResult(response); F
         }
     }
 }
