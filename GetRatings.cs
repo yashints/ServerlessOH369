@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Linq;
 using Microsoft.WindowsAzure.Storage.Table;
+using productsAPIs.Models;
 
 namespace productsAPIs
 {
