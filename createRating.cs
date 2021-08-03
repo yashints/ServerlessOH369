@@ -41,12 +41,12 @@ namespace productsAPIs
             // Validate user
             if (!(await Helpers.EntityExists(userIdAPIURL, rating.UserId)))
             {
-                return new BadRequestObjectResult("User does not exist!");
+                return new NotFoundObjectResult("User does not exist!");
             }
 
             if (!(await Helpers.EntityExists(productAPIURL, rating.ProductId)))
             {
-                return new BadRequestObjectResult("Product does not exist!");
+                return new NotFoundObjectResult("Product does not exist!");
             }
 
             var response = await Helpers.WriteToTable(ratingTable, rating);
