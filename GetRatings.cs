@@ -9,32 +9,36 @@ using Newtonsoft.Json;
 using System.Linq;
 using Microsoft.WindowsAzure.Storage.Table;
 using productsAPIs.Models;
+using System.Collections.Generic;
 
 namespace productsAPIs
 {
     public static class GetRatings
     {
-         [FunctionName("GetRatings")]
+        [FunctionName("GetRatings")]
         public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req,
-            [Table("ratings")] CloudTable ratingTable,
-            ILogger log)
+           [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req,
+           [Table("ratings")] CloudTable ratingTable,
+           ILogger log)
         {
             log.LogInformation("GetRating HTTP trigger function processed a request.");
 
             string userId = req.Query["userId"];
 
-            TableOperation tableOperation =
-                TableOperation.Retrieve<RatingResponse>("RATING", userId);
-            var result = await ratingTable.ExecuteAsync(tableOperation);
-            var rating = result.Result as RatingResponse;
+            var ratings = new List<RatingResponse>();
+            string filter = TableQuery.GenerateFilterCondition("UserId", QueryComparisons.Equal, userId);
+            var query = new TableQuery<RatingResponse>().Where(filter);
+            TableContinuationToken continuationToken = null;
 
-            if (rating == null)
+            do
             {
-                return new NotFoundResult();
+                var page = await ratingTable.ExecuteQuerySegmentedAsync(query, continuationToken);
+                continuationToken = page.ContinuationToken;
+                ratings.AddRange(page.Results);
             }
+            while (continuationToken != null);
 
-            var model = new RatingModel()
+            var result = ratings.Select(rating => new RatingModel()
             {
                 Id = rating.Id,
                 ProductId = rating.ProductId,
@@ -43,9 +47,9 @@ namespace productsAPIs
                 Timestamp = rating.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ssZ"),
                 UserNotes = rating.UserNotes,
                 LocationName = rating.LocationName,
-            };
+            });
 
-            return new OkObjectResult(model);
+            return new OkObjectResult(result);
         }
     }
 }
