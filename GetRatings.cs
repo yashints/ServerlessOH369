@@ -9,47 +9,42 @@ using Newtonsoft.Json;
 using System.Linq;
 using Microsoft.WindowsAzure.Storage.Table;
 
-namespace Company.Function
+namespace productsAPIs
 {
     public static class GetRatings
     {
-        [FunctionName("GetRatings")]
+         [FunctionName("GetRatings")]
         public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req,
+            [Table("ratings")] CloudTable ratingTable,
             ILogger log)
         {
-            string userIdAPIURL = Environment.GetEnvironmentVariable("UserAPIURL");
-            string productAPIURL = Environment.GetEnvironmentVariable("ProductAPIURL");
+            log.LogInformation("GetRating HTTP trigger function processed a request.");
 
-            var validator = new Helpers.RatingInputValidator();
-            log.LogInformation("C# HTTP trigger function processed a request.");
-            var json = await req.ReadAsStringAsync();
-            var rating = JsonConvert.DeserializeObject<Helpers.RatingInput>(json);
-            var validationResult = validator.Validate(rating);
+            string userId = req.Query["userId"];
 
-            if (!validationResult.IsValid)
+            TableOperation tableOperation =
+                TableOperation.Retrieve<RatingResponse>("RATING", userId);
+            var result = await ratingTable.ExecuteAsync(tableOperation);
+            var rating = result.Result as RatingResponse;
+
+            if (rating == null)
             {
-                return new BadRequestObjectResult(validationResult.Errors.Select(e => new
-                {
-                    Field = e.PropertyName,
-                    Error = e.ErrorMessage
-                }));
+                return new NotFoundResult();
             }
 
-            // Validate user
-            if (!(await Helpers.EntityExists(userIdAPIURL, rating.UserId)))
+            var model = new RatingModel()
             {
-                return new BadRequestObjectResult("User does not exist!");
-            }
+                Id = rating.Id,
+                ProductId = rating.ProductId,
+                UserId = rating.UserId,
+                Rating = rating.Rating,
+                Timestamp = rating.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ssZ"),
+                UserNotes = rating.UserNotes,
+                LocationName = rating.LocationName,
+            };
 
-            if (!(await Helpers.EntityExists(productAPIURL, rating.ProductId)))
-            {
-                return new BadRequestObjectResult("Product does not exist!");
-            }
-
-            var response = await Helpers.WriteToTable(ratingTable, rating);
-
-            return new OkObjectResult(response);
+            return new OkObjectResult(model);
         }
     }
 }
