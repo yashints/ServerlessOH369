@@ -1,4 +1,17 @@
-GET http://localhost:7071/api/GetRating?ratingId=d03e363e-4c6e-4648-a8bf-5a2d36843693 HTTP/1.1
+###
+POST https://icecream-rating-apis.azurewebsites.net/api/CreateRating?code=3yazdRduc4RzKduUcnYWli9go0N8G6YmgzIBOWNIfbnf9pvtiQWehg== HTTP/1.1
+Content-Type:application/json
+
+{
+  "userId": "cc20a6fb-a91f-4192-874d-132493685376",
+  "productId": "4c25613a-a3c2-4ef3-8e02-9c335eb23204",
+  "locationName": "Tiapei",
+  "rating": 1,
+  "userNotes": "John loves his coffee!"
+}
 
 ###
-GET http://localhost:7071/api/GetRatings?userId=cc20a6fb-a91f-4192-874d-132493685376 HTTP/1.1
+GET https://icecream-rating-apis.azurewebsites.net/api/GetRating?code=UhTjFnRXE0/DMZzKvxok9YocM4dkV9XalyR2eOfdrf9Pnlk7HuLlEQ==&ratingId=5d7c2a1f-7779-4738-9304-4e210153618c HTTP/1.1
+
+###
+GET https://icecream-rating-apis.azurewebsites.net/api/GetRatings?code=OkCrcPiCfhDeJCKOrfjBcQWkwJPfoBNUScVo1iNp7cJMZeFOk1aQcg==&userId=cc20a6fb-a91f-4192-874d-132493685376 HTTP/1.1
