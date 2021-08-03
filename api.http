@@ -1,1 +1,4 @@
 GET http://localhost:7071/api/GetRating?ratingId=d03e363e-4c6e-4648-a8bf-5a2d36843693 HTTP/1.1
+
+###
+GET http://localhost:7071/api/GetRatings?userId=cc20a6fb-a91f-4192-874d-132493685376 HTTP/1.1
