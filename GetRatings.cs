@@ -21,9 +21,20 @@ namespace productsAPIs
            [Table("ratings")] CloudTable ratingTable,
            ILogger log)
         {
+            string userIdAPIURL = Environment.GetEnvironmentVariable("UserAPIURL");
+
+
+
             log.LogInformation("GetRating HTTP trigger function processed a request.");
 
             string userId = req.Query["userId"];
+
+            // Validate user
+            if (!(await Helpers.EntityExists(userIdAPIURL, userId)))
+            {
+                return new NotFoundResult();
+            }
+
 
             var ratings = new List<RatingResponse>();
             string filter = TableQuery.GenerateFilterCondition("UserId", QueryComparisons.Equal, userId);
