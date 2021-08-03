@@ -2,7 +2,7 @@
 
 namespace productsAPIs.Models
 {
-    public class Rating
+    public class RatingModel
     {
         [JsonProperty("id")]
         public string Id { get; set; }
