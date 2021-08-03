@@ -49,7 +49,7 @@ namespace Company.Function
 
             var response = await Helpers.WriteToTable(ratingTable, rating);
 
-            return new OkObjectResult(response); F
+            return new OkObjectResult(response);
         }
     }
 }
